@@ -3,19 +3,49 @@ package com.bredelet.mistigri;
 import java.io.Reader;
 import java.io.BufferedReader;
 
+/***
+ * This reader extends BufferedReader with a new method which returns the
+ * text up to an arbitrary separator, not just a newline.<p>
+ *
+ * The separator is set on creation:
+ * <pre>new TemplateReader(reader, separator)
+ * </pre>
+ *
+ * Unlike java.util.Scanner the delimiter is a string, not a regular
+ * expression which allows for very quick detection. But when reading
+ * from disk or the network it is unlikely to make much a difference in
+ * speed.<p>
+ */
 public class TemplateReader extends BufferedReader
 {
     String separator;
+    private char[] sepchars;
     
     private static final int bufsize = 400;
     private int averageLength = 100;
     
+    /***
+     * Creates a new TemplateReader for the specified source and separator.<p>
+     *
+     * @param source The underlying reader to read from
+     * @param separator The delimiter string to use in readPart()
+     */
     public TemplateReader(Reader source, String separator) {
         super(source);
         this.separator = separator;
         this.averageLength += separator.length();
     }
     
+    /***
+     * Reads from the underlying source until the requested length or until
+     * the source is completely read.<p>
+     *
+     * @param buf A buffer to read into
+     * @param start The offset in the buffer
+     * @param len The number of characters to read
+     *
+     * @return The number of characters actually read
+     */
     int readFull(char[] buf, int start, int len) throws java.io.IOException {
         int actual = read(buf, start, len);
         // System.err.println("-read " + actual);
@@ -32,10 +62,16 @@ public class TemplateReader extends BufferedReader
         return actual;
     }
     
+    /***
+     * Reads from the underlying source until the separator is found and returns
+     * the part of text that precedes.<p>
+     *
+     * Note that the separator is thrown away.
+     */
     public String readPart() throws java.io.IOException {
-        // assert(averageLength >= 2 * separator.length());
-        char[] buf = new char[bufsize];
+        // assert(averageLength > separator.length());
         StringBuilder part = new StringBuilder(averageLength);
+        char[] buf = new char[bufsize];
         int seplen = separator.length();
         int start = 0;
         int end = 0;
@@ -43,7 +79,6 @@ public class TemplateReader extends BufferedReader
             if (start + seplen * 2 >= bufsize)
             {
                 // Flush buffer
-                // System.err.println("%%%FLUSH: start=" + start);
                 part.append(buf, 0, start);
                 start = 0;
             }
@@ -51,21 +86,26 @@ public class TemplateReader extends BufferedReader
             if (actual < seplen)
             {
                 end = start + actual;
+                if (end == -1) return null;
                 break;
             }
             int last = start + seplen - 1;
-            int findSep = separator.lastIndexOf(buf[last]);
+            char witness = buf[last];
+            int findSep = separator.lastIndexOf(witness);
             int first = start;
             while (findSep != -1)
             {
                 // Found separator character!
-                // System.err.println("%%% FOUND: " + buf[last] + " at " + last);
                 if (findSep == last - first)
                 {
                     // Position coincides with 'first'
                     int pos = first;
                     boolean differs = false;
-                    for (char sepchar: separator.toCharArray())
+                    if (sepchars == null)
+                    {
+                        sepchars = separator.toCharArray();
+                    }
+                    for (char sepchar: sepchars)
                     {
                         differs = sepchar != buf[pos];
                         if (differs) break;
@@ -74,7 +114,7 @@ public class TemplateReader extends BufferedReader
                     if (differs)
                     {
                         // Check if the separator character repeats at another position
-                        findSep = separator.lastIndexOf(buf[last], findSep - 1);
+                        findSep = separator.lastIndexOf(witness, findSep - 1);
                     }
                     else
                     {
@@ -88,20 +128,18 @@ public class TemplateReader extends BufferedReader
                     // Does not coincide, read extra characters from input and adjust 'first'.
                     int extra = last - findSep - first;
                     int actual2 = readFull(buf, first + seplen, extra);
-                    if (actual2 != extra)
+                    if (actual2 < extra)
                     {
                         end = first + seplen + actual2;
                         break outer;
                     }
-                    // System.err.println("%%% MORE: '" + new String(buf, first + seplen, extra) + "'");
                     first += extra;
+                    // assert(findSep == last - first);
                 }
             }
             start = first + seplen;
         } while (true);
-        if (end == -1) return null;
         part.append(buf, 0, end);
-        // System.err.println("%%% RESULT: " + part);
         return part.toString();
     }
 
