@@ -48,14 +48,12 @@ public class TemplateReader extends BufferedReader
      */
     int readFull(char[] buf, int start, int len) throws java.io.IOException {
         int actual = read(buf, start, len);
-        // System.err.println("-read " + actual);
         if (actual < len)
         {
             int current;
             for (current = actual; actual != -1 && current < len; current += actual)
             {
                 actual = read(buf, start + current, len - current);
-                // System.err.println("-read " + actual);
             }
             return current;
         }
