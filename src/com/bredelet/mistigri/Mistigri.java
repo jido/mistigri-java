@@ -5,6 +5,7 @@ import java.io.PipedReader;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Logger;
+import java.util.function.Function;
 
 public class Mistigri
 {
@@ -40,13 +41,50 @@ public class Mistigri
         }
     }
     
+    private static String htmlEscape(String s) {
+        if (s == null || s.length() == 0) 
+        {
+            return s;
+        }
+        StringBuilder sb = new StringBuilder(s.length() + 16);
+        for (int i = 0; i < s.length(); i++)
+        {
+            char c = s.charAt(i);
+            switch (c)
+            {
+                case '&':
+                    sb.append("&amp;");
+                    break;
+                case '<':
+                    sb.append("&lt;");
+                    break;
+                case '>':
+                    sb.append("&gt;");
+                    break;
+                case '"':
+                    sb.append("&quot;"); 
+                    break;
+                case '\'':
+                    sb.append("&#39;"); 
+                    break;
+                case '/':
+                    sb.append("&#47;"); 
+                    break;
+                default:
+                    sb.append(c);
+            }
+        }
+        return sb.toString();
+  }
+    
+    
     private static final Map<String, Object> defaults = new HashMap<String, Object>();
     static {
         defaults.put("openBrace", "{{");
         defaults.put("closeBrace", "}}");
         defaults.put("placeholder", "N/A");
         defaults.put("methodCall", false);
-        defaults.put("escapeFunction", null);
+        defaults.put("escapeFunction", (Function<String, String>) text -> htmlEscape(text));
         defaults.put("reader", null);
     }
     
@@ -70,12 +108,12 @@ public class Mistigri
             input = new TemplateReader(template, openBrace);
         }
         PipedReader result = new PipedReader();
-        new Engine(input, result, this, config).start();
+        new Engine(input, model, result, this, config).start();
         return result;
     }
     
     public static void main(String[] args) throws Exception {
-        Reader r = new Mistigri().prrcess(new java.io.InputStreamReader(System.in), null);
+        Reader r = new Mistigri().prrcess(new java.io.InputStreamReader(System.in), new HashMap<String, Object>());
         java.io.BufferedReader br = new java.io.BufferedReader(r);
         for (String line = br.readLine(); line != null; line = br.readLine())
         {
