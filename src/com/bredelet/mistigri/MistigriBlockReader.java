@@ -17,8 +17,8 @@ public class MistigriBlockReader extends TemplateReader {
     private boolean marked = false;
     private static final Pattern parser = Pattern.compile("^\\s*(\\S+)");
     
-    MistigriBlockReader(Reader source, String action, String first, Pattern closeBrace, Consumer<String> setEnding) {
-        super(source, closeBrace.toString());
+    MistigriBlockReader(TemplateReader source, String action, String first, Pattern closeBrace, Consumer<String> setEnding) {
+        super(source, source.separator);
         this.action = action;
         parts.add(first);
         this.setEnding = setEnding;
