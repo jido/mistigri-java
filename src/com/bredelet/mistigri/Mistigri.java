@@ -1,6 +1,8 @@
 package com.bredelet.mistigri;
 
 import java.io.Reader;
+import java.io.Writer;
+import java.io.PipedWriter;
 import java.io.PipedReader;
 import java.util.Map;
 import java.util.HashMap;
@@ -97,6 +99,16 @@ public class Mistigri
     }
     
     public Reader prrcess(Reader template, Map<String, Object> model, Map<String, Object> config) throws java.io.IOException {
+        PipedReader result = new PipedReader();
+        process(template, new PipedWriter(result), model, config);
+        return result;
+    }
+
+    public void process(Reader template, Writer output, Map<String, Object> model) throws java.io.IOException {
+        process(template, output, model, null);
+    }
+    
+    public void process(Reader template, Writer output, Map<String, Object> model, Map<String, Object> config) throws java.io.IOException {
         String openBrace = (String) getOption("openBrace", config);
         TemplateReader input;
         if (template instanceof TemplateReader && ((TemplateReader) template).separator == openBrace)
@@ -107,17 +119,13 @@ public class Mistigri
         {
             input = new TemplateReader(template, openBrace);
         }
-        PipedReader result = new PipedReader();
-        new Engine(input, model, result, this, config).start();
-        return result;
+        new Engine(input, model, output, this, config).start();
     }
     
     public static void main(String[] args) throws Exception {
-        Reader r = new Mistigri().prrcess(new java.io.InputStreamReader(System.in), new HashMap<String, Object>());
-        java.io.BufferedReader br = new java.io.BufferedReader(r);
-        for (String line = br.readLine(); line != null; line = br.readLine())
-        {
-            System.out.println(line);
-        }
+        Map<String, Object> model = new HashMap<String, Object>();
+        model.put("raw", 20);
+        model.put("comment", 0);
+        new Mistigri().process(new java.io.InputStreamReader(System.in), new java.io.OutputStreamWriter(System.out), model);
     }
 }
