@@ -25,10 +25,10 @@ public class Engine extends Thread
     Function<String, String> escapeFunc;
     Logger log;
     
-    Engine(TemplateReader input, Map<String, Object> model, PipedReader sink, Mistigri control, Map<String, Object> config) throws java.io.IOException {
+    Engine(TemplateReader input, Map<String, Object> model, Writer output, Mistigri control, Map<String, Object> config) throws java.io.IOException {
         this.input = input;
         this.model = model;
-        this.output = new PipedWriter(sink);
+        this.output = output;
         this.openBrace = (String) control.getOption("openBrace", config);
         String closeBraceText = (String) control.getOption("closeBrace", config);
         this.closeBrace = Pattern.compile(closeBraceText, Pattern.LITERAL);
@@ -89,12 +89,14 @@ public class Engine extends Thread
                         output.write(handleValue(action, args));
                         break;
                     default:
+                        log.fine("default case, tag=" + mistigri);
                         action = parseAction(mistigri, args);
                         output.write(escape(handleValue(action, args), escapeFunc));
                 }
                 output.write(text);
                 rendered += text;
             }
+            log.fine("finished writing parts, rendered={{" + rendered + "}}");
         }
         catch (java.io.IOException e) {
             log.warning(e.getLocalizedMessage());
@@ -138,9 +140,11 @@ public class Engine extends Thread
         MistigriBlockReader blockReader = new MistigriBlockReader(input, action, text, closeBrace, ending -> args.put("$ending", ending));
         String result = "";
         Object value = model.get(action);//valueFor(action, model, bind);
+        log.fine("%%% action=" + action + " value=" + value);
         String prelude = (String) args.get("$prelude");    // preserve value
         if (value instanceof Function)
         {
+            log.fine("action is a function, calling");
             args.put("$template", blockReader);
             args.put("$invertBlock", invert);
             value = callFilter(action, value, args);
@@ -178,6 +182,7 @@ public class Engine extends Thread
             for (Object item: list)
             {
                 count += 1;
+                log.fine("Item " + count + " = " + item);
                 Map<String, Object> submodel = prepModel(model, item, count, total, suffix);
                 if (count > 1 && middle != null)
                 {
