@@ -27,7 +27,7 @@ public class MistigriBlockReader extends TemplateReader {
     
     boolean matchAction(String part) {
         Matcher them = parser.matcher(part);
-        return them.matches() && them.group(1).equals(action);
+        return them.find() && them.group(1).equals(action);
     }
     
     /***
@@ -54,22 +54,26 @@ public class MistigriBlockReader extends TemplateReader {
         {
             case '#':
             case '^':
-                if (matchAction(part))
-                {
-                    ++nesting;
-                }
-                break;
             case '/':
-                if (matchAction(part))
+                String[] mitext = closeBrace.split(part.substring(1), 2);
+                String mistigri = mitext[0];
+                if (matchAction(mistigri))
                 {
-                    --nesting;
-                    if (nesting == 0)
+                    if (part.charAt(0) == '/')
                     {
-                        String[] mitext = closeBrace.split(part, 2);
-                        String text = (mitext.length > 1) ? mitext[1] : "";
-                        setEnding.accept(text);
-                        part = null;
+                        if (nesting == 0)
+                        {
+                            String text = (mitext.length > 1) ? mitext[1] : "";
+                            setEnding.accept(text);
+                            part = null;
+                        }
+                        --nesting;
                     }
+                    else
+                    {
+                        ++nesting;
+                    }
+
                 }
         }
         if (marked) parts.add(part);

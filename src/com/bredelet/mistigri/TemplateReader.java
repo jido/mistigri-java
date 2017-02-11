@@ -138,6 +138,7 @@ public class TemplateReader extends BufferedReader
             start = first + seplen;
         } while (true);
         part.append(buf, 0, end);
+        //System.out.println("%%%PART=\"" + part + "\" size=" + end + " left over=\"" + new String(buf).substring(end) + "\"");
         return part.toString();
     }
 

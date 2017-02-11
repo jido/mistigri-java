@@ -49,6 +49,7 @@ public class Engine extends Thread
     }
     
     private void render(TemplateReader template, Map<String, Object> model) {
+        log.fine("TemplateReader=" + template);
         Map<String, Object> args = new HashMap<String, Object>();
         String rendered = "";
         String action;
@@ -78,6 +79,8 @@ public class Engine extends Thread
                         args.put("$prelude", rendered);
                         //includes.offset = offset + rendered.length;
                         handleBlock(action, invert, args, text);
+                        rendered = "";
+                        text = (String) args.get("$ending");
                         break;
                     case '/':
                         output.write(mistigri);   // invalid close tag
@@ -96,7 +99,7 @@ public class Engine extends Thread
                 output.write(text);
                 rendered += text;
             }
-            log.fine("finished writing parts, rendered={{" + rendered + "}}");
+            log.fine("finished writing parts TemplateReader=" + template);
         }
         catch (java.io.IOException e) {
             log.warning(e.getLocalizedMessage());
@@ -136,9 +139,8 @@ public class Engine extends Thread
         return defaultText;
     }
     
-    private String handleBlock(String action, boolean invert, Map<String, Object> args, String text) {
+    private void handleBlock(String action, boolean invert, Map<String, Object> args, String text) {
         MistigriBlockReader blockReader = new MistigriBlockReader(input, action, text, closeBrace, ending -> args.put("$ending", ending));
-        String result = "";
         Object value = model.get(action);//valueFor(action, model, bind);
         log.fine("%%% action=" + action + " value=" + value);
         String prelude = (String) args.get("$prelude");    // preserve value
@@ -150,12 +152,18 @@ public class Engine extends Thread
             value = callFilter(action, value, args);
             if (value instanceof String)
             {
-                return value.toString(); // add to output
+                try {
+                    output.write(value.toString()); // add to output
+                }
+                catch (java.io.IOException ioe) {
+                    log.warning("Error");
+                }
+                return;
             }
             else if (value instanceof Reader)
             {
                 //includes.work.push({deferred: value, at: includes.offset, path: null, model: null, render: true});
-                return "";
+                return;
             }
         }
         boolean isEmptyColl = value instanceof Collection && ((Collection<?>) value).isEmpty();
@@ -203,7 +211,8 @@ public class Engine extends Thread
                         // Programming error
                         throw new RuntimeException(ioe);
                     }
-                    if (count == 1) {
+                    if (count == 1) 
+                    {
                         if (args.containsKey("tag"))
                         {
                             String ending = (String) args.get("$ending");
@@ -219,7 +228,19 @@ public class Engine extends Thread
                 }
             }
         }
-        return result;
+        else
+        {
+            try {
+                while (blockReader.readPart() != null)
+                {
+                    log.fine("Skip block part");
+                }
+            }
+            catch (java.io.IOException ioe) {
+                log.warning("Error");
+            }
+        }
+        log.fine("%%%Exiting");
     }
     
     Map<String, Object> prepModel(Map<String, Object> model, Object item, int count, int total, String suffix) {
