@@ -49,7 +49,7 @@ public class MistigriBlockReader extends TemplateReader {
         {
             setEnding.accept("");
             return null;
-        }        
+        }
         switch (part.charAt(0))
         {
             case '#':

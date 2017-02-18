@@ -36,6 +36,10 @@ public class Engine extends Thread
         this.bind = (boolean) control.getOption("methodCall", config);
         this.escapeFunc = (Function<String, String>) control.getOption("escapeFunction", config);
         this.log = control.log;
+        // java.util.logging.Handler h = new java.util.logging.StreamHandler(System.err, new java.util.logging.SimpleFormatter());
+        // h.setLevel(java.util.logging.Level.ALL);
+        // log.addHandler(h);
+        // log.setLevel(java.util.logging.Level.ALL);
     }
     
     public void run() {
@@ -59,6 +63,7 @@ public class Engine extends Thread
             while (true)
             {
                 String part = template.readPart();
+                log.fine("%%%PART = \"" + part +"\"");
                 if (part == null) break;
                 String[] mitext = closeBrace.split(part, 2);
                 String mistigri = mitext[0];

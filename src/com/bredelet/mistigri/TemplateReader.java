@@ -1,7 +1,7 @@
 package com.bredelet.mistigri;
 
 import java.io.Reader;
-import java.io.BufferedReader;
+//import java.io.BufferedReader;
 
 /***
  * This reader extends BufferedReader with a new method which returns the
@@ -16,13 +16,14 @@ import java.io.BufferedReader;
  * from disk or the network it is unlikely to make much a difference in
  * speed.<p>
  */
-public class TemplateReader extends BufferedReader
+public class TemplateReader extends Reader
 {
     String separator;
     private char[] sepchars;
     
     private static final int bufsize = 400;
     private int averageLength = 100;
+    Reader source;
     
     /***
      * Creates a new TemplateReader for the specified source and separator.<p>
@@ -31,9 +32,20 @@ public class TemplateReader extends BufferedReader
      * @param separator The delimiter string to use in readPart()
      */
     public TemplateReader(Reader source, String separator) {
-        super(source);
+        //super(source);
+        this.source = source;
         this.separator = separator;
         this.averageLength += separator.length();
+    }
+    
+    @Override
+    public void close() throws java.io.IOException {
+        source.close();
+    }
+    
+    @Override
+    public int read(char[] buf, int start, int len) throws java.io.IOException {
+        return source.read(buf, start, len);
     }
     
     /***
