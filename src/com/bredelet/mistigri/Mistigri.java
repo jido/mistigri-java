@@ -126,6 +126,7 @@ public class Mistigri
         Map<String, Object> model = new HashMap<String, Object>();
         model.put("raw", 20);
         model.put("comment", 0);
-        new Mistigri().process(new java.io.InputStreamReader(System.in), new java.io.OutputStreamWriter(System.out), model);
+        java.io.InputStreamReader in = new java.io.InputStreamReader(System.in);
+        new Mistigri().process(new java.io.BufferedReader(in), new java.io.OutputStreamWriter(System.out), model);
     }
 }

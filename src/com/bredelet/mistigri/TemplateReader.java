@@ -59,13 +59,13 @@ public class TemplateReader extends Reader
      * @return The number of characters actually read
      */
     int readFull(char[] buf, int start, int len) throws java.io.IOException {
-        int actual = read(buf, start, len);
+        int actual = source.read(buf, start, len);
         if (actual < len)
         {
             int current;
             for (current = actual; actual != -1 && current < len; current += actual)
             {
-                actual = read(buf, start + current, len - current);
+                actual = source.read(buf, start + current, len - current);
             }
             return current;
         }
