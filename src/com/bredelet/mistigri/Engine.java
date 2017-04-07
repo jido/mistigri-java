@@ -173,7 +173,7 @@ public class Engine extends Thread
         }
         boolean isEmptyColl = value instanceof Collection && ((Collection<?>) value).isEmpty();
         boolean isEmptyArray = value instanceof Object[] && ((Object[]) value).length == 0;
-        boolean isEmptyString = value instanceof String && value.toString().equals("");
+        boolean isEmptyString = value instanceof String && value.equals("");
         boolean isFalse = value instanceof Boolean && !((Boolean) value);
         boolean isZero = value instanceof Number && ((Number) value).equals(0);
         boolean isEmpty = isEmptyColl || isEmptyArray || isEmptyString || isFalse || isZero;
@@ -218,16 +218,10 @@ public class Engine extends Thread
                     }
                     if (count == 1) 
                     {
-                        if (args.containsKey("tag"))
+                        String tags = getMiddleTags(prelude, args);
+                        if (tags != null)
                         {
-                            String ending = (String) args.get("$ending");
-                            int left = prelude.toLowerCase().lastIndexOf("<" + ((String) args.get("tag")).toLowerCase());
-                            int right = ending.toLowerCase().indexOf("</" + ((String) args.get("tag")).toLowerCase());
-                            if (left != -1 && right != -1)
-                            {
-                                right = ending.indexOf(">", right) + 1;
-                                middle = ending.substring(0, right) + prelude.substring(left);
-                            }
+                            middle = tags;
                         }
                     }
                 }
@@ -246,6 +240,22 @@ public class Engine extends Thread
             }
         }
         log.fine("%%%Exiting");
+    }
+    
+    private static String getMiddleTags(String prelude, Map<String, Object> args) {
+        if (args.containsKey("tag"))
+        {
+            String ending = (String) args.get("$ending");
+            String tag = ((String) args.get("tag")).toLowerCase();
+            int left = prelude.toLowerCase().lastIndexOf("<" + tag);
+            int right = ending.toLowerCase().indexOf("</" + tag);
+            if (left != -1 && right != -1)
+            {
+                right = ending.indexOf(">", right) + 1;
+                return ending.substring(0, right) + prelude.substring(left);
+            }
+        }
+        return null;
     }
     
     Map<String, Object> prepModel(Map<String, Object> model, Object item, int count, int total, String suffix) {
